@@ -1,4 +1,8 @@
 *
 !.gitignore
 !/kitty
+!/kitty/**
 !/searxng-search
+!/searxng-search/**
+!/simplify
+!/simplify/**
