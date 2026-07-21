@@ -1,3 +1,5 @@
+// @amp-agent-mode {"key":"composer-2.5","label":"Composer 2.5"}
+
 import type { PluginAPI } from '@ampcode/plugin'
 // Cursor/Grok CLI tool shims are registered by the sibling cursor-shim plugin.
 
