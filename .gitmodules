@@ -1,0 +1,4 @@
+[submodule "amp/plugins"]
+	path = amp/plugins
+	url = https://ampcode.com/git/@xyenon/-/plugins
+	branch = main
