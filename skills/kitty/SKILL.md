@@ -108,7 +108,7 @@ kitten @ send-text --all "echo hello\n"
 Get the current visible text from a window:
 
 ```bash
-kitten @ get-text --match "id:$WID"
+kitten @ get-text --match "title:server-log"
 ```
 
 Get text including scrollback buffer:
@@ -128,7 +128,7 @@ kitten @ get-text --match "title:server-log" --extent=last_cmd_output
 Focus a specific window:
 
 ```bash
-kitten @ focus-window --match "id:$WID"
+kitten @ focus-window --match "title:server-log"
 ```
 
 Focus a specific tab:
@@ -142,21 +142,21 @@ kitten @ focus-tab --match "title:server-log"
 **Send Ctrl+C (Interrupt):**
 
 ```bash
-kitten @ send-text --match "id:$WID" "\x03"
+kitten @ send-text --match "title:server-log" "\x03"
 ```
 
 **Close a window:**
 
 ```bash
-kitten @ close-window --match "id:$WID"
+kitten @ close-window --match "title:server-log"
 ```
 
 **Close a tab:**
 (Note: You can close a tab by matching its title or any window ID inside it)
 
 ```bash
-# By ID of a window inside the tab
-kitten @ close-tab --match "id:$WID"
+# By id of a window inside the tab
+kitten @ close-tab --match "window_id:$WID"
 
 # By tab title
 kitten @ close-tab --match "title:server-log"
@@ -167,7 +167,7 @@ kitten @ close-tab --match "title:server-log"
 Kitty supports powerful matching expressions:
 
 - `title:pattern` - Match by window title
-- `id:number` - Match by window ID
+- `id:number` - Match by window ID, or by tab ID for the tab-level commands below
 - `pid:number` - Match by process ID
 - `cwd:path` - Match by current working directory
 - `cmdline:pattern` - Match by command line
@@ -179,6 +179,8 @@ Combine with `and`, `or`, `not`:
 ```bash
 kitten @ focus-window --match "title:server and state:active"
 ```
+
+**Tabs vs. windows:** `--match` selects *tabs* for the tab-level commands — `launch`, `close-tab` and `focus-tab` — and *windows* for everything else. Each command's `--help` says which of the two it matches. Inside a tab-level match, `id:` is a tab id and `title:` a tab title, so use `window_id:` and `window_title:` to select the tab that contains a given window. Getting this wrong rarely errors: kitty falls back to looking for a window when a tab match fails, so the command works until the two id spaces collide.
 
 ## 8. Get Window/Tab Information
 
