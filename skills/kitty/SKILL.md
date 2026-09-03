@@ -4,6 +4,7 @@ description: Instructions for using kitty remote control to spawn windows/tabs, 
 allowed-tools:
   - Bash(kitten @ *)
   - Bash(echo *)
+  - Bash(jq *)
 ---
 
 # Kitty Remote Control Skill
@@ -82,9 +83,13 @@ kitten @ send-text --match "title:server-log" "npm start\n"
 
 **Using ID (same command only):**
 
+The id has to be captured and used in one command, since the next call gets a fresh shell:
+
 ```bash
-kitten @ send-text --match "id:$WID" "npm start\n"
+WID=$(kitten @ launch --title "server-log" --keep-focus) && kitten @ send-text --match "id:$WID" "npm start\n"
 ```
+
+Note that this form is not covered by `Bash(kitten @ *)` and will ask for approval.
 
 **Newline handling:**
 
