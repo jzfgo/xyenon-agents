@@ -47,9 +47,15 @@ To run a command (e.g., a dev server) in a way that persists and can be inspecte
    Use `$KITTY_WINDOW_ID` to ensure the new window stays with you. Note that the `--match` of `launch` matches *tabs*, so `window_id:` is the field that resolves a window id to its containing tab. A plain `id:` looks for a tab with that id first and only falls back to windows, which silently puts the new window in the wrong tab whenever a tab id happens to collide.
 
    ```bash
-   WID=$(kitten @ launch --match "window_id:$KITTY_WINDOW_ID" --title "server-log" --keep-focus)
-   echo "Created window with ID: $WID"
+   kitten @ launch --match "window_id:$KITTY_WINDOW_ID" --title "server-log" --keep-focus
    ```
+
+   Give every window a unique `--title` and use that as the handle from then on, rather than capturing the id `launch` prints into a shell variable. Two reasons, both specific to being driven by an agent:
+
+   - Agent `Bash` tools normally run each command in a fresh shell, so a variable set by one call is gone by the next. `WID=$(kitten @ launch ...)` followed by a separate `kitten @ get-text --match "id:$WID"` call matches nothing.
+   - The `allowed-tools` entry above is `Bash(kitten @ *)`, and an allow rule does not match past an assignment of a variable that is not a known-safe environment variable. A command written as `WID=$(kitten @ ...)` is not covered by it and prompts for approval.
+
+   Capturing the id is still fine within a single command, where both parts run in the same shell.
 
 2. **Or create a new tab:**
 
@@ -66,15 +72,21 @@ To run a command (e.g., a dev server) in a way that persists and can be inspecte
 
 ## 3. Send Text/Commands to a Window
 
-Send keystrokes to a specific window. Use the window ID for precision, or matching for convenience.
+Send keystrokes to a specific window. Match by title across separate commands; match by id only within a single command, where the variable is still in scope.
 
-**Using ID (Reliable):**
+**Using Title (Reliable across calls):**
+
+```bash
+kitten @ send-text --match "title:server-log" "npm start\n"
+```
+
+**Using ID (same command only):**
 
 ```bash
 kitten @ send-text --match "id:$WID" "npm start\n"
 ```
 
-**Using Matching (Title):**
+**Newline handling:**
 
 Note: Use `\n` for Enter. In some shells, you may need to use `$'...'` or pipe to ensure the newline is interpreted correctly.
 
@@ -190,10 +202,12 @@ kitten @ ls | jq '.[].tabs[].windows[] | {id, title, cmdline}'
 
 ## Summary of Pattern
 
-1. `WID=$(kitten @ launch --title "NAME" --keep-focus [CMD])` - Create window and save ID
-2. `kitten @ send-text --match "id:$WID" "CMD\n"` - Send command reliably
-3. `kitten @ get-text --match "id:$WID"` - Read output
-4. `kitten @ close-window --match "id:$WID"` - Cleanup
+1. `kitten @ launch --title "NAME" --keep-focus [CMD]` - Create window under a unique title
+2. `kitten @ send-text --match "title:NAME" "CMD\n"` - Send command
+3. `kitten @ get-text --match "title:NAME"` - Read output
+4. `kitten @ close-window --match "title:NAME"` - Cleanup
+
+The title is the handle that survives between separate commands; see section 2 for why a captured window id does not.
 
 ## Common Remote Control Commands
 
