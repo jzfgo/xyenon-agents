@@ -20,23 +20,34 @@ First, verify you are running inside kitty with remote control enabled. You can 
 kitten @ ls
 ```
 
-If this fails, check if `$KITTY_LISTEN_ON` is set. Note that in some configurations it might be empty even if remote control is enabled (using default sockets).
+If this fails with `open /dev/tty: device not configured`, kitty is only reachable over the escape-code channel, which requires a controlling terminal. Agent `Bash` tools normally run with their output piped, so there is no TTY and that channel is unavailable. The fix is to have kitty listen on a socket as well:
 
 ```bash
 echo $KITTY_LISTEN_ON
 ```
 
-If remote control is not enabled, the user should add `allow_remote_control yes` to their `kitty.conf` or start kitty with `--allow-remote-control`.
+If this is empty, the user needs *both* of these settings in their `kitty.conf`. `allow_remote_control` on its own does not open a socket, and kitty has no default socket path:
+
+```conf
+allow_remote_control yes
+listen_on unix:/tmp/kitty-{kitty_pid}
+```
+
+`listen_on` is not applied by a config reload, so kitty has to be restarted. After that, kitty exports `KITTY_LISTEN_ON` to every child process and `kitten @` reads it automatically, so no `--to` argument is ever needed.
+
+The `{kitty_pid}` placeholder keeps concurrent kitty instances from fighting over the same path. A fixed path is claimed by whichever instance binds it first, and the rest are left without remote control.
+
+For a tighter setup, `allow_remote_control socket-only` also works, and additionally disables the escape-code channel — which any program writing to the terminal can otherwise trigger.
 
 ## 2. Spawn a Background Process
 
 To run a command (e.g., a dev server) in a way that persists and can be inspected:
 
 1. **Create a new window in the SAME tab as the agent** (recommended):
-   Use `$KITTY_WINDOW_ID` to ensure the new window stays with you.
+   Use `$KITTY_WINDOW_ID` to ensure the new window stays with you. Note that the `--match` of `launch` matches *tabs*, so `window_id:` is the field that resolves a window id to its containing tab. A plain `id:` looks for a tab with that id first and only falls back to windows, which silently puts the new window in the wrong tab whenever a tab id happens to collide.
 
    ```bash
-   WID=$(kitten @ launch --match "id:$KITTY_WINDOW_ID" --title "server-log" --keep-focus)
+   WID=$(kitten @ launch --match "window_id:$KITTY_WINDOW_ID" --title "server-log" --keep-focus)
    echo "Created window with ID: $WID"
    ```
 
