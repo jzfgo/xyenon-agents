@@ -58,6 +58,8 @@ To run a command (e.g., a dev server) in a way that persists and can be inspecte
 
    Capturing the id is still fine within a single command, where both parts run in the same shell.
 
+   **Keep the title free of spaces.** A match specification is parsed as a boolean expression, with `and`, `or` and `not` as operators, so a space splits it into two terms. `--match "title:nvim: agents"` fails with `Error: No location specified before agents`. Use `nvim-agents`, or match a space-free prefix, since the query is a regular expression: `--match "title:^nvim"`.
+
 2. **Or create a new tab:**
 
    ```bash
@@ -70,6 +72,16 @@ To run a command (e.g., a dev server) in a way that persists and can be inspecte
    ```bash
    kitten @ launch --title "server-log" --keep-focus --hold npm start
    ```
+
+   **The command runs in kitty's environment, not the user's shell environment.** `launch` execs the command directly: no shell profile is read, and the `PATH` is whatever kitty itself was started with. A kitty started from Finder or the Dock on macOS passes something like `/Applications/kitty.app/Contents/MacOS:/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/bin` — with no `/opt/homebrew/bin`, so nothing installed by Homebrew on Apple Silicon is found. The `shell` setting in `kitty.conf` does not help here; it applies to windows that start a shell, not to a launched command.
+
+   Run the program through a login shell, which also gives it the environment it would have had if the user had started it:
+
+   ```bash
+   kitten @ launch --title "editor" --cwd /path/to/repo zsh -lc 'nvim .'
+   ```
+
+   An absolute path such as `/opt/homebrew/bin/nvim` also works, but does not fix anything the program itself looks up in `PATH` later.
 
 ## 3. Send Text/Commands to a Window
 
@@ -109,6 +121,13 @@ kitten @ send-text --all "echo hello\n"
 ```
 
 ## 4. Inspect Output (Get Text from Window)
+
+Read the window back after launching anything, not only to follow a long-running process. A `launch` whose command fails to start still returns a window id, and the window still appears in `kitten @ ls` with the title and working directory that were asked for. kitty holds it open so the error stays visible — even without `--hold` — so `ls` reports the holding process rather than the command that was wanted. From the outside the launch is indistinguishable from a successful one; the error text exists only inside the window:
+
+```
+Failed to launch child: nvim
+With error: No such file or directory
+```
 
 Get the current visible text from a window:
 
